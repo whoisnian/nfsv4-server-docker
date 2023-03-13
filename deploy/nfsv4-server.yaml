@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfsv4-server
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: exports-data-pv
+spec:
+  storageClassName: local-storage
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  local:
+    path: /exports-data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - xx-xxxxx-node01
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: exports-data-pvc
+  namespace: nfsv4-server
+spec:
+  storageClassName: local-storage
+  volumeName: exports-data-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nfsv4-server
+  namespace: nfsv4-server
+spec:
+  type: ClusterIP
+  clusterIP: 10.96.0.100 # https://kubernetes.io/docs/concepts/services-networking/cluster-ip-allocation/
+  ports:
+    - name: nfs
+      port: 2049
+  selector:
+    nfsv4-server: nfsd
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfsv4-server
+  namespace: nfsv4-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      nfsv4-server: nfsd
+  template:
+    metadata:
+      labels:
+        nfsv4-server: nfsd
+    spec:
+      containers:
+        - image: ghcr.io/whoisnian/nfsv4-server-docker:0.0.1
+          name: nfsd
+          ports:
+            - name: nfs
+              containerPort: 2049
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /exports
+              name: exports-data
+      volumes:
+        - name: exports-data
+          persistentVolumeClaim:
+            claimName: exports-data-pvc

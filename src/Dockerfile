@@ -16,6 +16,8 @@
 
 FROM debian:11
 
+LABEL org.opencontainers.image.source https://github.com/whoisnian/nfsv4-server-docker
+
 ENV NFS_VERSION 1:1.3.4-6
 
 RUN set -x && \
