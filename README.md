@@ -18,13 +18,15 @@ docker build ./src \
 ```
 
 ## Run
-The container will need to run with `CAP_SYS_ADMIN` or `--privileged`.
+The container will need to run with `--privileged`.
 ```sh
 mkdir /tmp/exports
 docker run \
   --rm --name nfsv4-server \
-  --cap-add SYS_ADMIN \
+  --privileged \
   -p 2049:2049 \
   -v /tmp/exports:/exports \
   ghcr.io/whoisnian/nfsv4-server-docker:0.0.1
+
+# about `--cap-add SYS_ADMIN`: https://github.com/moby/moby/issues/16429
 ```
