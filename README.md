@@ -26,7 +26,7 @@ docker run \
   --privileged \
   -p 2049:2049 \
   -v /tmp/exports:/exports \
-  ghcr.io/whoisnian/nfsv4-server-docker:0.0.1
+  ghcr.io/whoisnian/nfsv4-server-docker:0.0.2
 
 # about `--cap-add SYS_ADMIN`: https://github.com/moby/moby/issues/16429
 ```
