@@ -9,24 +9,16 @@
 * https://wiki.archlinux.org/title/NFS#Starting_the_server
 * https://www.suse.com/support/kb/doc/?id=000019530
 
-## Build
-```sh
-TAG=$(cat VERSION)
-docker build ./src \
-  -f ./src/Dockerfile \
-  -t ghcr.io/whoisnian/nfsv4-server-docker:$TAG
-```
-
 ## Run
 The container will need to run with `--privileged`.
 ```sh
 mkdir /tmp/exports
-docker run \
-  --rm --name nfsv4-server \
+docker run -d \
+  --name nfsv4-server \
   --privileged \
   -p 2049:2049 \
   -v /tmp/exports:/exports \
-  ghcr.io/whoisnian/nfsv4-server-docker:0.0.2
+  ghcr.io/whoisnian/nfsv4-server-docker:0.0.3
 
 # about `--cap-add SYS_ADMIN`: https://github.com/moby/moby/issues/16429
 ```

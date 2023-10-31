@@ -68,7 +68,7 @@ spec:
         nfsv4-server: nfsd
     spec:
       containers:
-        - image: ghcr.io/whoisnian/nfsv4-server-docker:0.0.1
+        - image: ghcr.io/whoisnian/nfsv4-server-docker:0.0.3
           name: nfsd
           ports:
             - name: nfs
