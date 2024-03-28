@@ -1,6 +1,9 @@
+# syntax=docker.io/docker/dockerfile:1.7
+# https://docs.docker.com/build/dockerfile/frontend/
+
 # Copyright 2016 The Kubernetes Authors.
 # Copyright 2018 Google LLC
-# Copyright 2023 whoisnian
+# Copyright 2024 whoisnian
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,21 +17,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12-slim
 
-ENV NFS_VERSION 1:1.3.4-6
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' >/etc/apt/apt.conf.d/keep-cache && \
+  apt-get update && apt-get install --no-install-recommends -y nfs-kernel-server
 
-RUN set -x && \
-    apt-get update && apt-get install -qq -y nfs-kernel-server=${NFS_VERSION}* && \
-    rm -rf /var/lib/apt/lists/* && \
-    mkdir /exports
-
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +rx /usr/local/bin/docker-entrypoint.sh
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/
 
 VOLUME /exports
 
 EXPOSE 2049/tcp
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/exports"]
