@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright 2015 The Kubernetes Authors.
 # Copyright 2018 Google LLC
-# Copyright 2023 whoisnian
+# Copyright 2024 whoisnian
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,25 +16,30 @@
 # limitations under the License.
 
 function start() {
-    unset gid
-    # accept "-G gid" option
-    while getopts "G:" opt; do
-        case ${opt} in
-        G) gid=${OPTARG} ;;
-        esac
-    done
-    shift $(($OPTIND - 1))
+    # unset gid
+    # # accept "-G gid" option
+    # while getopts "G:" opt; do
+    #     case ${opt} in
+    #     G) gid=${OPTARG} ;;
+    #     esac
+    # done
+    # shift $(($OPTIND - 1))
+
+    OPT_RW="rw"
+    if [ -n "$READ_ONLY" ]; then
+        OPT_RW="ro"
+    fi
+    OPT_HOST="*"
+    if [ -n "$ALLOW_HOST" ]; then
+        OPT_HOST="$ALLOW_HOST"
+    fi
 
     # prepare /etc/exports
-    for i in "$@"; do
-        # fsid=0: needed for NFSv4
-        echo "$i *(rw,fsid=0,sync,no_subtree_check,no_root_squash,insecure)" >>/etc/exports
-        if [ -v gid ]; then
-            chmod 070 $i
-            chgrp $gid $i
-        fi
-        echo "Serving $i"
-    done
+    # fsid=0: needed for NFSv4
+    FULL_CFG="/exports $OPT_HOST($OPT_RW,fsid=0,sync,no_subtree_check,no_root_squash,insecure)"
+
+    echo "Serving $FULL_CFG"
+    echo "$FULL_CFG" >>/etc/exports
 
     # NFSv4 can run without rpcbind
     #
@@ -51,7 +56,7 @@ function start() {
 
     /usr/sbin/exportfs -r
     # -G 10 to reduce grace time to 10 seconds (the lowest allowed)
-    /usr/sbin/rpc.nfsd -G 10 -N 2 -N 3
+    /usr/sbin/rpc.nfsd -G 10 -N 3
 
     # For NFSv2 and NFSv3, the Network Status Monitor protocol (or NSM for short) is used to notify NFS peers of reboots
     # /sbin/rpc.statd --no-notify
@@ -71,11 +76,15 @@ function stop() {
     exit 0
 }
 
-trap stop TERM
+if [ -z "$@" ]; then
+    trap stop TERM
 
-start "$@"
+    start
 
-# Ugly hack to do nothing and wait for SIGTERM
-while true; do
-    sleep 5
-done
+    # Ugly hack to do nothing and wait for SIGTERM
+    while true; do
+        sleep 5
+    done
+else
+    exec "$@"
+fi
